@@ -1,0 +1,446 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>짤 만들기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&family=Black+Han+Sans&family=Do+Hyeon&family=Nanum+Pen+Script&family=Gaegu:wght@700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #E9F1FA;
+  --surface: #FFFFFF;
+  --ink: #1F2A44;
+  --muted: #5B6680;
+  --pink: #FF7EA8;
+  --butter: #FFD95A;
+  --line: #1F2A44;
+  --field: #F4F8FD;
+  color-scheme: light;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141A29;
+    --surface: #1E2740;
+    --ink: #EEF2FA;
+    --muted: #A7B1C8;
+    --pink: #FF8FB4;
+    --butter: #FFDD6E;
+    --line: #EEF2FA;
+    --field: #182036;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #141A29; --surface: #1E2740; --ink: #EEF2FA; --muted: #A7B1C8;
+  --pink: #FF8FB4; --butter: #FFDD6E; --line: #EEF2FA; --field: #182036;
+  color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: inherit; }
+html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Gowun Dodum", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.55;
+}
+.wrap {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 28px 20px 48px;
+}
+header h1 {
+  font-family: "Jua", "Apple SD Gothic Neo", system-ui, sans-serif;
+  font-weight: 400;
+  font-size: clamp(2.2rem, 6vw, 3.4rem);
+  line-height: 1.05;
+  margin: 0 0 6px;
+  letter-spacing: -0.01em;
+}
+header p { margin: 0 0 24px; color: var(--muted); }
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: 32px;
+  align-items: start;
+}
+@media (max-width: 780px) { .layout { grid-template-columns: 1fr; gap: 24px; } }
+
+/* the sticker — the one loud thing on the page */
+.stage { position: relative; }
+.sticker {
+  position: relative;
+  background: var(--surface);
+  border: 3px solid var(--line);
+  border-radius: 18px;
+  padding: 10px;
+  box-shadow: 8px 8px 0 var(--pink);
+  transform: rotate(-1.2deg);
+  transition: transform .25s ease;
+}
+.sticker.drag { transform: rotate(0deg) scale(1.01); box-shadow: 8px 8px 0 var(--butter); }
+.sticker canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
+  background: var(--field);
+}
+.drop-hint {
+  margin: 18px 4px 0;
+  font-size: .9rem;
+  color: var(--muted);
+}
+
+.panel {
+  background: var(--surface);
+  border: 2px solid var(--line);
+  border-radius: 14px;
+  padding: 20px;
+  display: grid;
+  gap: 18px;
+}
+.field { display: grid; gap: 6px; }
+.field label, .field .label {
+  font-family: "Jua", system-ui, sans-serif;
+  font-size: 1.05rem;
+}
+.field .row { display: flex; align-items: center; gap: 10px; }
+.field output { min-width: 3ch; text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+textarea, select {
+  width: 100%;
+  font: inherit;
+  color: var(--ink);
+  background: var(--field);
+  border: 2px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+textarea { resize: vertical; min-height: 72px; }
+input[type="range"] { flex: 1; accent-color: var(--pink); }
+
+.file-btn, .btn {
+  font-family: "Jua", system-ui, sans-serif;
+  font-size: 1.1rem;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  padding: 10px 18px;
+  cursor: pointer;
+  color: var(--ink);
+  background: var(--field);
+  text-align: center;
+}
+.file-btn input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.file-btn:focus-within, .btn:focus-visible, textarea:focus-visible, select:focus-visible,
+input[type="range"]:focus-visible, .swatch:focus-visible {
+  outline: 3px solid var(--pink);
+  outline-offset: 2px;
+}
+.btn.primary {
+  background: var(--butter);
+  color: #1F2A44;
+  box-shadow: 4px 4px 0 var(--line);
+  width: 100%;
+  font-size: 1.25rem;
+  padding: 14px 18px;
+}
+.btn.primary:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--line); }
+.btn.primary:disabled { opacity: .6; cursor: progress; }
+.img-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+
+.swatches { display: flex; flex-wrap: wrap; gap: 10px; }
+.swatch {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  border: 2px solid var(--line);
+  cursor: pointer;
+  display: grid; place-items: center;
+  font-family: "Black Han Sans", sans-serif;
+  font-size: 1.1rem;
+  padding: 0;
+}
+.swatch[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--surface), 0 0 0 6px var(--pink); }
+
+.status { min-height: 1.4em; font-size: .92rem; color: var(--muted); margin: 0; }
+.fallback { display: none; gap: 8px; }
+.fallback.show { display: grid; }
+.fallback img { width: 100%; border-radius: 10px; border: 2px solid var(--line); }
+
+@media (prefers-reduced-motion: reduce) {
+  .sticker, .sticker.drag { transition: none; transform: none; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>짤 만들기</h1>
+    <p>사진을 올리고 문구를 쓰면 바로 이미지에 들어가요.</p>
+  </header>
+
+  <div class="layout">
+    <div class="stage">
+      <div class="sticker" id="sticker">
+        <canvas id="canvas" width="1000" height="1000" aria-label="짤 미리보기"></canvas>
+      </div>
+      <p class="drop-hint">사진을 여기로 끌어다 놓거나, 복사한 이미지를 붙여 넣어도 돼요 (Ctrl+V).</p>
+    </div>
+
+    <div class="panel">
+      <div class="field">
+        <span class="label">배경 사진</span>
+        <div class="img-actions">
+          <label class="file-btn">사진 고르기
+            <input type="file" id="file" accept="image/*">
+          </label>
+          <button class="btn" type="button" id="resetBg">기본 배경</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="text">넣을 문구</label>
+        <textarea id="text" rows="2">오늘도 수고했어!</textarea>
+      </div>
+
+      <div class="field">
+        <label for="font">글씨체</label>
+        <select id="font">
+          <option value="Jua">주아</option>
+          <option value="Black Han Sans">검은고딕</option>
+          <option value="Do Hyeon">도현</option>
+          <option value="Gaegu">개구</option>
+          <option value="Nanum Pen Script">나눔손글씨 펜</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="size">글씨 크기</label>
+        <div class="row">
+          <input type="range" id="size" min="3" max="20" step="0.5" value="9">
+          <output id="sizeOut" for="size">9</output>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="ypos">글씨 세로 위치</label>
+        <div class="row">
+          <input type="range" id="ypos" min="0" max="100" step="1" value="85">
+          <output id="yposOut" for="ypos">85</output>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="stroke">테두리 두께</label>
+        <div class="row">
+          <input type="range" id="stroke" min="0" max="30" step="1" value="16">
+          <output id="strokeOut" for="stroke">16</output>
+        </div>
+      </div>
+
+      <div class="field">
+        <span class="label" id="styleLabel">글씨 색</span>
+        <div class="swatches" role="group" aria-labelledby="styleLabel" id="swatches"></div>
+      </div>
+
+      <button class="btn primary" type="button" id="save">PNG로 저장하기</button>
+      <p class="status" id="status" role="status"></p>
+      <div class="fallback" id="fallback">
+        <p class="status">저장이 안 되면 아래 이미지를 길게 눌러서 저장하세요.</p>
+        <img id="fallbackImg" alt="완성된 짤">
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  const $ = id => document.getElementById(id);
+  const textEl = $('text'), fontEl = $('font'), sizeEl = $('size'), yEl = $('ypos'), strokeEl = $('stroke');
+  const statusEl = $('status');
+  const MAX_SIDE = 1600;
+
+  const styles = [
+    { name: '흰 글씨, 검은 테두리', fill: '#FFFFFF', stroke: '#1B1B1B' },
+    { name: '검은 글씨, 흰 테두리', fill: '#1B1B1B', stroke: '#FFFFFF' },
+    { name: '노란 글씨, 검은 테두리', fill: '#FFE14D', stroke: '#1B1B1B' },
+    { name: '분홍 글씨, 흰 테두리', fill: '#FF5C93', stroke: '#FFFFFF' },
+    { name: '하늘색 글씨, 남색 테두리', fill: '#BDE3FF', stroke: '#1F2A6B' }
+  ];
+  let styleIdx = 0;
+  let bgImage = null;
+
+  // swatches
+  const sw = $('swatches');
+  styles.forEach((s, i) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'swatch';
+    b.textContent = '가';
+    b.style.background = s.stroke;
+    b.style.color = s.fill;
+    b.style.webkitTextStroke = '0';
+    b.setAttribute('aria-label', s.name);
+    b.setAttribute('aria-pressed', i === 0 ? 'true' : 'false');
+    b.addEventListener('click', () => {
+      styleIdx = i;
+      sw.querySelectorAll('.swatch').forEach((el, j) => el.setAttribute('aria-pressed', j === i ? 'true' : 'false'));
+      render();
+    });
+    sw.appendChild(b);
+  });
+
+  function drawDefaultBg() {
+    canvas.width = 1000; canvas.height = 1000;
+    ctx.fillStyle = '#FFE38A';
+    ctx.fillRect(0, 0, 1000, 1000);
+    ctx.fillStyle = '#FFC2D6';
+    for (let y = 0; y < 1000 + 80; y += 80) {
+      for (let x = (y / 80) % 2 ? 40 : 0; x < 1000 + 80; x += 80) {
+        ctx.beginPath(); ctx.arc(x, y, 14, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+    ctx.fillStyle = 'rgba(31,42,68,.55)';
+    ctx.font = '44px "Jua", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('사진을 올려 주세요', 500, 380);
+  }
+
+  function drawCaption() {
+    const text = textEl.value;
+    if (!text.trim()) return;
+    const font = fontEl.value;
+    const size = Math.round(canvas.width * (parseFloat(sizeEl.value) / 100));
+    const lines = text.split('\n');
+    const lineH = size * 1.15;
+    const blockH = lineH * lines.length;
+    const centerY = (parseFloat(yEl.value) / 100) * canvas.height;
+    // keep the text block inside the image
+    let top = centerY - blockH / 2;
+    top = Math.max(size * 0.15, Math.min(canvas.height - blockH - size * 0.15, top));
+
+    ctx.font = `${size}px "${font}", "Jua", sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.lineJoin = 'round';
+    ctx.miterLimit = 2;
+    const s = styles[styleIdx];
+    const strokeW = size * (parseFloat(strokeEl.value) / 100);
+
+    lines.forEach((line, i) => {
+      const y = top + lineH * i + lineH / 2;
+      if (strokeW > 0) {
+        ctx.strokeStyle = s.stroke;
+        ctx.lineWidth = strokeW;
+        ctx.strokeText(line, canvas.width / 2, y);
+      }
+      ctx.fillStyle = s.fill;
+      ctx.fillText(line, canvas.width / 2, y);
+    });
+  }
+
+  function paint() {
+    if (bgImage) {
+      const scale = Math.min(1, MAX_SIDE / Math.max(bgImage.naturalWidth, bgImage.naturalHeight));
+      canvas.width = Math.round(bgImage.naturalWidth * scale);
+      canvas.height = Math.round(bgImage.naturalHeight * scale);
+      ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
+    } else {
+      drawDefaultBg();
+    }
+    drawCaption();
+  }
+
+  let pending = 0;
+  function render() {
+    $('sizeOut').textContent = sizeEl.value;
+    $('yposOut').textContent = yEl.value;
+    $('strokeOut').textContent = strokeEl.value;
+    const ticket = ++pending;
+    const font = fontEl.value;
+    const sample = textEl.value || '가';
+    const load = document.fonts && document.fonts.load
+      ? Promise.all([document.fonts.load(`40px "${font}"`, sample), document.fonts.load('40px "Jua"', '사진을 올려 주세요')])
+      : Promise.resolve();
+    load.catch(() => {}).then(() => { if (ticket === pending) paint(); });
+    $('fallback').classList.remove('show');
+  }
+
+  function loadFile(file) {
+    if (!file || !file.type.startsWith('image/')) {
+      statusEl.textContent = '이미지 파일만 올릴 수 있어요. JPG, PNG, GIF, WEBP 파일을 골라 주세요.';
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => { bgImage = img; statusEl.textContent = ''; render(); };
+    img.onerror = () => { statusEl.textContent = '이 사진은 열 수 없어요. 다른 사진을 골라 주세요.'; URL.revokeObjectURL(url); };
+    img.src = url;
+  }
+
+  $('file').addEventListener('change', e => loadFile(e.target.files[0]));
+  $('resetBg').addEventListener('click', () => { bgImage = null; $('file').value = ''; render(); });
+  [textEl, fontEl, sizeEl, yEl, strokeEl].forEach(el => el.addEventListener('input', render));
+
+  // drag & drop
+  const sticker = $('sticker');
+  ['dragenter', 'dragover'].forEach(ev => document.addEventListener(ev, e => { e.preventDefault(); sticker.classList.add('drag'); }));
+  ['dragleave', 'drop'].forEach(ev => document.addEventListener(ev, e => { e.preventDefault(); sticker.classList.remove('drag'); }));
+  document.addEventListener('drop', e => {
+    const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    if (f) loadFile(f);
+  });
+
+  // paste
+  document.addEventListener('paste', e => {
+    const items = e.clipboardData ? e.clipboardData.items : [];
+    for (const it of items) {
+      if (it.type && it.type.startsWith('image/')) { loadFile(it.getAsFile()); e.preventDefault(); return; }
+    }
+  });
+
+  // download
+  function showFallback(blob) {
+    const img = $('fallbackImg');
+    if (img.dataset.url) URL.revokeObjectURL(img.dataset.url);
+    const u = URL.createObjectURL(blob);
+    img.src = u; img.dataset.url = u;
+    $('fallback').classList.add('show');
+  }
+
+  $('save').addEventListener('click', () => {
+    const btn = $('save');
+    btn.disabled = true;
+    canvas.toBlob(blob => {
+      btn.disabled = false;
+      if (!blob) { statusEl.textContent = '이미지를 만들지 못했어요. 다시 눌러 주세요.'; return; }
+      const stamp = new Date().toISOString().slice(0, 19).replace(/[-:T]/g, '');
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `jjal-${stamp}.png`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      statusEl.textContent = 'PNG로 저장했어요.';
+      // iOS Safari sometimes ignores download links, so also show the image
+      if (/iPad|iPhone|iPod/.test(navigator.userAgent)) showFallback(blob);
+    }, 'image/png');
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
